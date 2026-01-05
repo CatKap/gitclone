@@ -1,28 +1,33 @@
-# Gitclone 
+![GitHub release](https://img.shields.io/github/v/release/CatKap/gitclone)
+# 🚀 Gitclone
+
+**Gitclone** is a lightweight utility designed for a single purpose — cloning Git repositories from a server. It supports both agent-based SSH authentication and HTTPS.
+
 ---
 
-This util is using only for one purpose - clone git repo from server. Supports agent-based ssh autheinfication and https.
 
-## Quick install
-Just download it, and use it. 
+## Quick Install
+
+Download and install the binary:
+
+```bash
+cd /usr/bin/
+wget https://github.com/CatKap/gitclone/releases/download/release/gitclone
+chmod +x ./gitclone
+gitclone
 ```
-cd /usr/bin/ && wget https://github.com/CatKap/gitclone/releases/download/release/gitclone && chmod +x ./gitclone
-gitclone 
-```
+
+## Dependencies
+Gitclone relies on libgit2. If you want to compile the binary yourself, you must either install the libgit2 shared library or compile it from source.
+
+### Installing Libgit2
+
+Install the required packages for building:
 
 
-## Dependenses 
-Used libgit2, if you want to compile binay by yourself, you shoud or install the libgit2 shared library, or comlipe from sourse.
+```apt install cmake libssl-dev zlib1g-dev```
 
-Also use 
-
-
-### Libgit2 
-Download packages required for the build: 
-
-```apt installcmake libssl-dev zlib1g-dev```
-
-Download and compile like this:
+Clone and build libgit2:
 ```
 git clone https://github.com/libgit2/libgit2.git
 cd libgit2
@@ -47,7 +52,7 @@ make
 ```
 
 ### Compilation
-If you want compile from source, use make utility.
+If you want compile from source, use the `make` utility.
 ```
 make static # Compile libgit2 first, like mentntion previosly
 make dynamic # For dynamic executable (requires libgit2 installed)
