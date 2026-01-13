@@ -25,13 +25,13 @@ Gitclone relies on libgit2. If you want to compile the binary yourself, you must
 Install the required packages for building:
 
 
-```apt install cmake libssl-dev zlib1g-dev```
+```apt install cmake libssl-dev zlib1g-dev libssh2-1-dev libpcre-dev```
 
 Clone and build libgit2:
 ```
 git clone https://github.com/libgit2/libgit2.git
 cd libgit2
-cd -rf build
+rm -rf build
 mkdir build && cd build
 
 cmake .. \
@@ -40,7 +40,6 @@ cmake .. \
   -DBUILD_CLI=OFF \
   -DUSE_GSSAPI=OFF \
   -DUSE_NTLMCLIENT=OFF \
-  -DREGEX_BACKEND=SYSTEM \
   -DPCRE_LIBRARY=/usr/local/lib/libpcre.a \
   -DPCRE_INCLUDE_DIR=/usr/local/include \
   -DUSE_HTTPS=ON \
