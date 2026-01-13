@@ -25,7 +25,7 @@ Gitclone relies on libgit2. If you want to compile the binary yourself, you must
 Install the required packages for building:
 
 
-```apt install cmake libssl-dev zlib1g-dev libpcre3-dev```
+```apt install cmake libssl-dev zlib1g-dev libpcre3-dev pkg-config```
 
 Clone and build libgit2:
 ```
