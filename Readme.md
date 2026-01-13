@@ -40,7 +40,6 @@ cmake .. \
   -DBUILD_CLI=OFF \
   -DUSE_GSSAPI=OFF \
   -DUSE_NTLMCLIENT=OFF \
-  -DREGEX_BACKEND=SYSTEM \
   -DPCRE_LIBRARY=/usr/local/lib/libpcre.a \
   -DPCRE_INCLUDE_DIR=/usr/local/include \
   -DUSE_HTTPS=ON \
