@@ -32,7 +32,7 @@ int fast_forward(git_repository *repo)
     git_object *target = NULL;
     int r;
 
-    /* FETCH_HEAD всегда указывает на последний полученный коммит */
+    /* FETCH_HEAD always points to the last commit */
     r = git_reference_lookup(&fetch_head, repo, "FETCH_HEAD");
     if (r < 0)
         return r;
