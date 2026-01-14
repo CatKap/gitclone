@@ -1,5 +1,5 @@
-![GitHub release](https://img.shields.io/github/v/release/CatKap/gitclone/aarch64/)
-![GitHub release](https://img.shields.io/github/v/release/CatKap/gitclone/x86_64/)
+![GitHub release](https://img.shields.io/github/v/release/CatKap/gitclone/aarch64)
+![GitHub release](https://img.shields.io/github/v/release/CatKap/gitclone/x86_64)
 # 🚀 Gitclone
 
 **Gitclone** is a lightweight utility designed for a single purpose — cloning Git repositories from a server. It supports both agent-based SSH authentication and HTTPS.
