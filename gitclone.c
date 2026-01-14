@@ -33,14 +33,22 @@ int fast_forward(git_repository *repo)
     git_reference *remote_ref = NULL;
     git_object *target = NULL;
 
-    /* get repo head */
+    /* HEAD может быть detached */
     r = git_repository_head(&head, repo);
-    if (r < 0)
-        goto cleanup;
+    if (r == GIT_EUNBORNBRANCH || r == GIT_ENOTFOUND) {
+        return 1; /* пустой репо */
+    }
 
-    const char *branch = git_reference_shorthand(head);
+    const char *branch = NULL;
 
-    /* refs/remotes/origin/<branch> */
+    if (git_repository_head_detached(repo) == 0) {
+        /* нормальная ветка */
+        branch = git_reference_shorthand(head);
+    } else {
+        /* detached HEAD → берём origin/HEAD */
+        branch = "HEAD";
+    }
+
     char remote_ref_name[256];
     snprintf(remote_ref_name, sizeof(remote_ref_name),
              "refs/remotes/origin/%s", branch);
@@ -49,12 +57,10 @@ int fast_forward(git_repository *repo)
     if (r < 0)
         goto cleanup;
 
-    /* get object commit */
     r = git_reference_peel(&target, remote_ref, GIT_OBJECT_COMMIT);
     if (r < 0)
         goto cleanup;
 
-    /* checkout on upstream commit */
     git_checkout_options checkout_opts = GIT_CHECKOUT_OPTIONS_INIT;
     checkout_opts.checkout_strategy =
         GIT_CHECKOUT_FORCE | GIT_CHECKOUT_RECREATE_MISSING;
@@ -63,8 +69,10 @@ int fast_forward(git_repository *repo)
     if (r < 0)
         goto cleanup;
 
-    /* move to HEAD */
-    r = git_repository_set_head(repo, remote_ref_name);
+    /* ВАЖНО: если detached — не делаем set_head */
+    if (git_repository_head_detached(repo) == 0) {
+        r = git_repository_set_head(repo, remote_ref_name);
+    }
 
 cleanup:
     git_object_free(target);
