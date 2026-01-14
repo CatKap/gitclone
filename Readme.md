@@ -13,7 +13,7 @@ Download and install the binary:
 
 ```bash
 cd /usr/bin/
-wget https://github.com/CatKap/gitclone/releases/download/release/gitclone
+wget https://github.com/CatKap/gitclone/releases/download/$(uname -m)/gitclone
 chmod +x ./gitclone
 gitclone
 ```
