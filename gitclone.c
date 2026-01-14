@@ -28,39 +28,20 @@ static int transfer_progress_cb(
 
 int fast_forward(git_repository *repo)
 {
-    int r;
-    git_reference *head = NULL;
-    git_reference *remote_ref = NULL;
+    git_reference *fetch_head = NULL;
     git_object *target = NULL;
+    int r;
 
-    /* HEAD может быть detached */
-    r = git_repository_head(&head, repo);
-    if (r == GIT_EUNBORNBRANCH || r == GIT_ENOTFOUND) {
-        return 1; /* пустой репо */
-    }
+    /* FETCH_HEAD всегда указывает на последний полученный коммит */
+    r = git_reference_lookup(&fetch_head, repo, "FETCH_HEAD");
+    if (r < 0)
+        return r;
 
-    const char *branch = NULL;
-
-    if (git_repository_head_detached(repo) == 0) {
-        /* нормальная ветка */
-        branch = git_reference_shorthand(head);
-    } else {
-        /* detached HEAD → берём origin/HEAD */
-        branch = "HEAD";
-    }
-
-    char remote_ref_name[256];
-    snprintf(remote_ref_name, sizeof(remote_ref_name),
-             "refs/remotes/origin/%s", branch);
-
-    r = git_reference_lookup(&remote_ref, repo, remote_ref_name);
+    r = git_reference_peel(&target, fetch_head, GIT_OBJECT_COMMIT);
     if (r < 0)
         goto cleanup;
 
-    r = git_reference_peel(&target, remote_ref, GIT_OBJECT_COMMIT);
-    if (r < 0)
-        goto cleanup;
-
+    /* reset --hard */
     git_checkout_options checkout_opts = GIT_CHECKOUT_OPTIONS_INIT;
     checkout_opts.checkout_strategy =
         GIT_CHECKOUT_FORCE | GIT_CHECKOUT_RECREATE_MISSING;
@@ -69,15 +50,11 @@ int fast_forward(git_repository *repo)
     if (r < 0)
         goto cleanup;
 
-    /* ВАЖНО: если detached — не делаем set_head */
-    if (git_repository_head_detached(repo) == 0) {
-        r = git_repository_set_head(repo, remote_ref_name);
-    }
+    r = git_repository_set_head_detached(repo, git_object_id(target));
 
 cleanup:
     git_object_free(target);
-    git_reference_free(remote_ref);
-    git_reference_free(head);
+    git_reference_free(fetch_head);
     return r;
 }
 
@@ -118,11 +95,10 @@ fetch_opts.callbacks.transfer_progress = transfer_progress_cb;
         printf("Error %d/%d: %s\n", error, e->klass, e->message);
         exit(error);
       }
-      
-      r = fast_forward(repo);
+      printf("FF\n"); 
+      r = fast_forward(repo); 
     }
 
-    printf("%d\n", r); 
     if (r < 0) {
 
         const git_error *e = git_error_last();
