@@ -1,4 +1,4 @@
-![GitHub release](https://img.shields.io/github/v/release/CatKap/gitclone/)
+![GitHub release](https://img.shields.io/github/v/release/CatKap/gitclone)
 
 # 🚀 Gitclone
 
