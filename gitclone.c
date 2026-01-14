@@ -96,7 +96,10 @@ fetch_opts.callbacks.transfer_progress = transfer_progress_cb;
         exit(error);
       }
       printf("FF\n"); 
-      r = fast_forward(repo); 
+      git_remote *remote = NULL;
+      git_remote_lookup(&remote, repo, "origin");
+      r = git_remote_fetch(remote, NULL, &fetch_opts, NULL);
+      r = fast_forward(repo);
     }
 
     if (r < 0) {
