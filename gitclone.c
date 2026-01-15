@@ -1,14 +1,35 @@
 #include "libgit2/include/git2/errors.h"
 #include <git2.h>
 #include <stdio.h>
+#include <string.h>
 
+
+char* SSH_KEY_FILE = NULL;
 
 /* SSH credentials callback */
-int cred_cb(git_cred **out, const char *url, const char *username_from_url,
+int cred_agent_cb(git_cred **out, const char *url, const char *username_from_url,
             unsigned int allowed_types, void *payload) {
     (void)payload; // unused
 
     return git_cred_ssh_key_from_agent(out, username_from_url);
+}
+
+
+int cred_acquire_cb(
+    git_credential **out,
+    const char *url,
+    const char *username_from_url,
+    unsigned int allowed_types,
+    void *payload)
+{
+    const char *username = username_from_url ? username_from_url : "git";
+    return git_credential_ssh_key_new(
+        out,
+        username,
+        NULL,   // public key (can be NULL)
+        SSH_KEY_FILE,       // private key
+        NULL             // or NULL if none
+    );
 }
 
 static int transfer_progress_cb(
@@ -58,10 +79,48 @@ cleanup:
     return r;
 }
 
+int check_first(char* string, char* for_check, int len){
+  for(int i = 0; i < len; i++){
+    if(for_check[i] != string[i]){
+      return 0;
+    }
+  }
+  return 1;
+}
+
+char* get_ssh_file(int argc, char** argv){
+  const int len =  8;
+  const char for_check[] = "ssh_key=";
+  char* filename = NULL;
+  for(int i = 0; i < argc; i++){
+    if(!check_first(argv[i], for_check, len)){
+      continue;
+    }
+    // Find filename
+    int new_len = strlen(argv[i]) - len;
+    memmove(argv[i], argv[i] + len, new_len);
+    char* filename = argv[i];
+    for(int j = i; j < argc - 1; j++){
+      argv[j] = argv[j + 1];
+    }
+    argv[i][new_len] = '\0';
+    printf("Find ssh filename %s\n", argv[i]);
+    return filename;
+      
+  }
+  
+  return NULL;
+}
+
+
 int main(int argc, char **argv) {
     git_libgit2_init();
+    
+    SSH_KEY_FILE = get_ssh_file(argc, argv);
+
+
     if(argc < 3){
-      printf("Usage: gitclone [url] [destination dir] {optional:branch}\n");
+      printf("Usage: gitclone [url] [destination dir] {optional:branch} {optional: ssh_key=/filepath/}\n");
     return 1;
     }
 
@@ -73,8 +132,12 @@ int main(int argc, char **argv) {
 
     /* shallow clone */
     fetch_opts.depth = 1;
-fetch_opts.callbacks.transfer_progress = transfer_progress_cb;
-    fetch_opts.callbacks.credentials = cred_cb;
+    fetch_opts.callbacks.transfer_progress = transfer_progress_cb;
+    if(SSH_KEY_FILE){
+      fetch_opts.callbacks.credentials = cred_acquire_cb;
+    } else {
+    fetch_opts.callbacks.credentials = cred_agent_cb;
+    }
     opts.fetch_opts = fetch_opts;
 
     if (branch) {
