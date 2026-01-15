@@ -4,8 +4,15 @@
 
 **Gitclone** is a lightweight utility designed for a single purpose — cloning Git repositories from a server. It supports both agent-based SSH authentication and HTTPS.
 
+For ssh authentication you can use agent-based keys (just use utility without specifying ssh_key arugemnt), or provide ssh private key file. 
+
 ---
 
+## Usage
+```
+gitclone [url] [destination dir] {optional:branch} {optional: ssh_key=/filepath/for/key}
+
+```
 
 ## Quick Install
 
