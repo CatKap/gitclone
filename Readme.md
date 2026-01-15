@@ -1,4 +1,5 @@
 ![GitHub release](https://img.shields.io/github/v/release/CatKap/gitclone)
+
 # 🚀 Gitclone
 
 **Gitclone** is a lightweight utility designed for a single purpose — cloning Git repositories from a server. It supports both agent-based SSH authentication and HTTPS.
@@ -12,7 +13,7 @@ Download and install the binary:
 
 ```bash
 cd /usr/bin/
-wget https://github.com/CatKap/gitclone/releases/download/release/gitclone
+wget https://github.com/CatKap/gitclone/releases/download/$(uname -m)/gitclone
 chmod +x ./gitclone
 gitclone
 ```
