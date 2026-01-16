@@ -100,11 +100,13 @@ char* get_ssh_file(int argc, char** argv){
     int new_len = strlen(argv[i]) - len;
     memmove(argv[i], argv[i] + len, new_len);
     char* filename = argv[i];
+
+    argv[i][new_len] = '\0';
+    printf("Find ssh filename %s\n", argv[i]);
+
     for(int j = i; j < argc - 1; j++){
       argv[j] = argv[j + 1];
     }
-    argv[i][new_len] = '\0';
-    printf("Find ssh filename %s\n", argv[i]);
     return filename;
       
   }
@@ -117,7 +119,9 @@ int main(int argc, char **argv) {
     git_libgit2_init();
     
     SSH_KEY_FILE = get_ssh_file(argc, argv);
-
+    if(SSH_KEY_FILE){
+      argc -= 1;
+  }
 
     if(argc < 3){
       printf("Usage: gitclone [url] [destination dir] {optional:branch} {optional: ssh_key=/filepath/}\n");
