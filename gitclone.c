@@ -5,6 +5,7 @@
 
 
 char* SSH_KEY_FILE = NULL;
+char* SSH_PUB_FILE = NULL;
 
 /* SSH credentials callback */
 int cred_agent_cb(git_cred **out, const char *url, const char *username_from_url,
@@ -26,7 +27,7 @@ int cred_acquire_cb(
     return git_credential_ssh_key_new(
         out,
         username,
-        NULL,   // public key (can be NULL)
+        SSH_PUB_FILE,   // public key (can be NULL)
         SSH_KEY_FILE,       // private key
         NULL             // or NULL if none
     );
@@ -88,10 +89,8 @@ int check_first(char* string, char* for_check, int len){
   return 1;
 }
 
-char* get_ssh_file(int argc, char** argv){
-  const int len =  8;
-  const char for_check[] = "ssh_key=";
-  char* filename = NULL;
+char* check_for_arg(int argc, char** argv, const char* for_check){
+  int len = strlen(for_check);
   for(int i = 0; i < argc; i++){
     if(!check_first(argv[i], for_check, len)){
       continue;
@@ -102,7 +101,7 @@ char* get_ssh_file(int argc, char** argv){
     char* filename = argv[i];
 
     argv[i][new_len] = '\0';
-    printf("Find ssh filename %s\n", argv[i]);
+    printf("Find agument %s\n", argv[i]);
 
     for(int j = i; j < argc - 1; j++){
       argv[j] = argv[j + 1];
@@ -110,18 +109,67 @@ char* get_ssh_file(int argc, char** argv){
     return filename;
       
   }
-  
   return NULL;
 }
 
+git_commit * get_last_commit( git_repository * repo )
+{
+  int rc;
+  git_commit * commit = NULL; /* the result */
+  git_oid oid_parent_commit;  /* the SHA1 for last commit */
+
+  /* resolve HEAD into a SHA1 */
+  rc = git_reference_name_to_id( &oid_parent_commit, repo, "HEAD" );
+  if ( rc == 0 )
+  {
+    /* get the actual commit structure */
+    rc = git_commit_lookup( &commit, repo, &oid_parent_commit );
+    if ( rc == 0 )
+    {
+      return commit;
+    }
+  }
+  return NULL;
+}
+
+/*
+int paste_commit_into_file(char* filename, git_commit* commit){
+
+  FILE* f = fopen(filename, "w");
+  if(!f)
+    return 1;
+  
+  fwrite()
+
+}*/
+
+
+
+
+char* get_commit_file(int argc, char** argv){
+  const char argname[] = "commit_file=";
+  return check_for_arg(argc, argv, argname);
+}
 
 int main(int argc, char **argv) {
     git_libgit2_init();
     
-    SSH_KEY_FILE = get_ssh_file(argc, argv);
+    SSH_KEY_FILE = check_for_arg(argc, argv, "ssh_key=");
     if(SSH_KEY_FILE){
       argc -= 1;
-  }
+    }
+
+    SSH_PUB_FILE = check_for_arg(argc, argv, "pub_key=");
+    if(SSH_PUB_FILE){
+    argc -= 1;
+    }
+
+    printf("Private key filename %s\nPublic key filename %s\n", SSH_KEY_FILE, SSH_PUB_FILE);
+
+    char* sha_commit_filename = get_commit_file(argc, argv);
+    if(sha_commit_filename){
+      argc -= 1;
+    }
 
     if(argc < 3){
       printf("Usage: gitclone [url] [destination dir] {optional:branch} {optional: ssh_key=/filepath/}\n");
@@ -163,8 +211,10 @@ int main(int argc, char **argv) {
         exit(error);
       }
       printf("FF\n"); 
+      
       git_remote *remote = NULL;
       git_remote_lookup(&remote, repo, "origin");
+      fetch_opts.depth = 0; // fetch full history
       r = git_remote_fetch(remote, NULL, &fetch_opts, NULL);
       r = fast_forward(repo);
     }
@@ -173,8 +223,10 @@ int main(int argc, char **argv) {
 
         const git_error *e = git_error_last();
         fprintf(stderr, "Error: %s\n", e && e->message ? e->message : "unknown\n");
+    } else {
+      
     }
-
+    
     git_repository_free(repo);
     git_libgit2_shutdown();
     return r;
