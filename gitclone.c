@@ -15,6 +15,12 @@ int cred_agent_cb(git_cred **out, const char *url, const char *username_from_url
     return git_cred_ssh_key_from_agent(out, username_from_url);
 }
 
+int certificate_check_cb(git_cert *cert, int valid, const char *host, void *payload) {
+    (void)cert;
+    (void)host;
+    (void)payload;
+    return 0;
+}
 
 int cred_acquire_cb(
     git_credential **out,
@@ -182,9 +188,12 @@ int main(int argc, char **argv) {
     git_fetch_options fetch_opts = GIT_FETCH_OPTIONS_INIT;
     fetch_opts.callbacks.transfer_progress = transfer_progress_cb;
 
+    git_remote_callbacks callbacks = GIT_REMOTE_CALLBACKS_INIT;
+
     /* shallow clone */
     fetch_opts.depth = 1;
     fetch_opts.callbacks.transfer_progress = transfer_progress_cb;
+    fetch_opts.callbacks.certificate_check = certificate_check_cb;
     if(SSH_KEY_FILE){
       fetch_opts.callbacks.credentials = cred_acquire_cb;
     } else {
