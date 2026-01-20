@@ -3,9 +3,31 @@
 #include <stdio.h>
 #include <string.h>
 
-
+char* PAT = NULL;
 char* SSH_KEY_FILE = NULL;
 char* SSH_PUB_FILE = NULL;
+
+// Callback for GitHub PAT via HTTPS
+int github_pat_cb(git_cred **out, const char *url, const char *username,
+                  unsigned int allowed_types, void *payload) {
+    
+    
+    if (!PAT) {
+        fprintf(stderr, "No pat token provieded!\n");
+        return GIT_EUSER;
+    }
+    
+    if (git_cred_userpass_plaintext_new(out, "x-access-token", PAT) == 0) {
+        return 0;
+    }
+    
+    if (git_cred_userpass_plaintext_new(out, "oauth2", PAT) == 0) {
+        return 0;
+    }
+    
+    return git_cred_userpass_plaintext_new(out, "token", PAT);
+}
+
 
 /* SSH credentials callback */
 int cred_agent_cb(git_cred **out, const char *url, const char *username_from_url,
@@ -15,12 +37,6 @@ int cred_agent_cb(git_cred **out, const char *url, const char *username_from_url
     return git_cred_ssh_key_from_agent(out, username_from_url);
 }
 
-int certificate_check_cb(git_cert *cert, int valid, const char *host, void *payload) {
-    (void)cert;
-    (void)host;
-    (void)payload;
-    return 0;
-}
 
 int cred_acquire_cb(
     git_credential **out,
@@ -138,20 +154,6 @@ git_commit * get_last_commit( git_repository * repo )
   return NULL;
 }
 
-/*
-int paste_commit_into_file(char* filename, git_commit* commit){
-
-  FILE* f = fopen(filename, "w");
-  if(!f)
-    return 1;
-  
-  fwrite()
-
-}*/
-
-
-
-
 char* get_commit_file(int argc, char** argv){
   const char argname[] = "commit_file=";
   return check_for_arg(argc, argv, argname);
@@ -160,15 +162,22 @@ char* get_commit_file(int argc, char** argv){
 int main(int argc, char **argv) {
     git_libgit2_init();
     
-    SSH_KEY_FILE = check_for_arg(argc, argv, "ssh_key=");
-    if(SSH_KEY_FILE){
+    PAT = check_for_arg(argc, argv, "pat=");
+    printf("Pat is %s\n", PAT); 
+    if(PAT){
       argc -= 1;
+    } else {
+      SSH_KEY_FILE = check_for_arg(argc, argv, "ssh_key=");
+      if(SSH_KEY_FILE){
+        argc -= 1;
+      }
+
+      SSH_PUB_FILE = check_for_arg(argc, argv, "pub_key=");
+      if(SSH_PUB_FILE){
+      argc -= 1;
+      }
     }
 
-    SSH_PUB_FILE = check_for_arg(argc, argv, "pub_key=");
-    if(SSH_PUB_FILE){
-    argc -= 1;
-    }
 
     printf("Private key filename %s\nPublic key filename %s\n", SSH_KEY_FILE, SSH_PUB_FILE);
 
@@ -193,19 +202,25 @@ int main(int argc, char **argv) {
     /* shallow clone */
     fetch_opts.depth = 1;
     fetch_opts.callbacks.transfer_progress = transfer_progress_cb;
-    fetch_opts.callbacks.certificate_check = certificate_check_cb;
-    if(SSH_KEY_FILE){
-      fetch_opts.callbacks.credentials = cred_acquire_cb;
+
+
+    if(PAT){
+      printf("Adding pat callback\n");
+      fetch_opts.callbacks.credentials = github_pat_cb;
     } else {
-    fetch_opts.callbacks.credentials = cred_agent_cb;
+      if(SSH_KEY_FILE){
+        fetch_opts.callbacks.credentials = cred_acquire_cb;
+      } else {
+      fetch_opts.callbacks.credentials = cred_agent_cb;
+      }
+
+      if (branch) {
+          printf("Cloning branch %s\n", branch);
+          opts.checkout_branch = branch;
+      }
     }
+
     opts.fetch_opts = fetch_opts;
-
-    if (branch) {
-        printf("Cloning branch %s\n", branch);
-        opts.checkout_branch = branch;
-    }
-
     const char* url = argv[1];
     const char* directory = argv[2];
     
