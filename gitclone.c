@@ -178,13 +178,8 @@ int main(int argc, char **argv) {
       }
     }
 
-
     printf("Private key filename %s\nPublic key filename %s\n", SSH_KEY_FILE, SSH_PUB_FILE);
 
-    char* sha_commit_filename = get_commit_file(argc, argv);
-    if(sha_commit_filename){
-      argc -= 1;
-    }
 
     if(argc < 3){
       printf("Usage: gitclone [url] [destination dir] {optional:branch} {optional: ssh_key=/filepath/}\n");
@@ -214,10 +209,11 @@ int main(int argc, char **argv) {
       fetch_opts.callbacks.credentials = cred_agent_cb;
       }
 
-      if (branch) {
-          printf("Cloning branch %s\n", branch);
-          opts.checkout_branch = branch;
-      }
+    }
+
+    if (branch) {
+        printf("Cloning branch %s\n", branch);
+        opts.checkout_branch = branch;
     }
 
     opts.fetch_opts = fetch_opts;
