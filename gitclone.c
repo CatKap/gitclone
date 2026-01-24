@@ -70,35 +70,58 @@ static int transfer_progress_cb(
     return 0;
 }
 
-int fast_forward(git_repository *repo)
+int fast_forward(git_repository *repo, const char *branch_name)
 {
-    git_reference *fetch_head = NULL;
+    git_reference *remote_ref = NULL;
+    git_reference *local_ref = NULL;
     git_object *target = NULL;
-    int r;
+    int r = -1;
+    char refname[256];
+    
+    if(NULL != branch_name){
 
-    /* FETCH_HEAD always points to the last commit */
-    r = git_reference_lookup(&fetch_head, repo, "FETCH_HEAD");
-    if (r < 0)
-        return r;
+      snprintf(refname, sizeof(refname), "refs/remotes/origin/%s", branch_name);
+      r = git_reference_lookup(&remote_ref, repo, refname);
+    }
 
-    r = git_reference_peel(&target, fetch_head, GIT_OBJECT_COMMIT);
+    if (r < 0) {
+        /* If not find remote branch */
+        r = git_reference_lookup(&remote_ref, repo, "FETCH_HEAD");
+        if (r < 0)
+            return r;
+    }
+    
+    /* Get commit ref */
+    r = git_reference_peel(&target, remote_ref, GIT_OBJECT_COMMIT);
     if (r < 0)
         goto cleanup;
-
-    /* reset --hard */
+    
+    /* Opts for force backoff */
     git_checkout_options checkout_opts = GIT_CHECKOUT_OPTIONS_INIT;
     checkout_opts.checkout_strategy =
         GIT_CHECKOUT_FORCE | GIT_CHECKOUT_RECREATE_MISSING;
-
+    
     r = git_checkout_tree(repo, target, &checkout_opts);
     if (r < 0)
         goto cleanup;
-
-    r = git_repository_set_head_detached(repo, git_object_id(target));
+    
+    /* Update local branch to this commit  */
+    char local_refname[256];
+    snprintf(local_refname, sizeof(local_refname), "refs/heads/%s", branch_name);
+    
+    /* Create local branch */
+    r = git_reference_create(&local_ref, repo, local_refname,
+                            git_object_id(target), 1, NULL);
+    if (r < 0)
+        goto cleanup;
+    
+    /* Set HEAD on this branch */
+    r = git_repository_set_head(repo, local_refname);
 
 cleanup:
     git_object_free(target);
-    git_reference_free(fetch_head);
+    git_reference_free(local_ref);
+    git_reference_free(remote_ref);
     return r;
 }
 
@@ -236,7 +259,7 @@ int main(int argc, char **argv) {
       git_remote_lookup(&remote, repo, "origin");
       fetch_opts.depth = 0; // fetch full history
       r = git_remote_fetch(remote, NULL, &fetch_opts, NULL);
-      r = fast_forward(repo);
+      r = fast_forward(repo, branch);
     }
 
     if (r < 0) {
