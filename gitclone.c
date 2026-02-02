@@ -298,7 +298,6 @@ int main(int argc, char **argv) {
       
       git_remote *remote = NULL;
       git_remote_lookup(&remote, repo, "origin");
-      fetch_opts.depth = 0; // fetch full history
       r = git_remote_fetch(remote, NULL, &fetch_opts, NULL);
       r = fast_forward(repo, branch);
     }
