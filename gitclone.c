@@ -258,8 +258,8 @@ int main(int argc, char **argv) {
 
     git_remote_callbacks callbacks = GIT_REMOTE_CALLBACKS_INIT;
 
-    /* shallow clone */
-    fetch_opts.depth = 1;
+    /* Full clone*/
+    fetch_opts.depth = 0;
     fetch_opts.callbacks.transfer_progress = transfer_progress_cb;
 
 
@@ -295,9 +295,10 @@ int main(int argc, char **argv) {
         exit(error);
       }
       printf("FF\n"); 
-      
+       
       git_remote *remote = NULL;
       git_remote_lookup(&remote, repo, "origin");
+      fetch_opts.depth = GIT_FETCH_DEPTH_UNSHALLOW;
       r = git_remote_fetch(remote, NULL, &fetch_opts, NULL);
       r = fast_forward(repo, branch);
     }
